@@ -25,6 +25,9 @@ verified:
 - by: claude-code/sonnet-5
   at: '2026-09-01T12:00:00Z'
   note: ajout de la section « À arbitrer » (canal d'artefact source)
+- by: claude-code/sonnet-5
+  at: '2026-09-01T12:30:00Z'
+  note: addendum résidu ripgrep post-correctif (prop-2026-09-01-9513)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -34,6 +37,8 @@ sources:
   resource: docs/SPEC-okf-bundle-hub-v0.md — amendement rév. 4.2
 - id: prop-d8ed
   resource: prop-2026-09-01-d8ed — kb_search IO_ERROR (ripgrep absent), résolu en proposals/accepted/
+- id: prop-9513
+  resource: prop-2026-09-01-9513 — récidive post-correctif (installation périmée), résolu en proposals/accepted/
 ---
 
 # Roadmap des évolutions de l'outillage
@@ -157,6 +162,21 @@ formelle de ce retour :
 Le contournement décrit par le retour — navigation manuelle via `kb_read` sur
 `index.md` — est devenu inutile après le correctif.
 
+**Résidu, corroboré le 01/09.** `prop-2026-09-01-9513` (device "port-el2d105",
+soumise 10:01:59Z) reproduit l'erreur *dans son libellé pré-correctif*
+(« voir `.devcontainer/devcontainer.json` »), après les deux correctifs
+ci-dessus (06:41:34Z) et après la clôture de `prop-2026-09-01-d8ed`
+(08:44:13Z). Pas une régression : cette installation du hub n'avait
+simplement pas retiré le dépôt depuis avant le correctif. Mais rien ne le
+signale à une session qui heurte l'erreur — un correctif commité au dépôt du
+hub ne s'applique qu'aux installations qui l'ont retiré, et aucune n'a de
+moyen de savoir si c'est son cas. Le champ `version` que le serveur MCP
+annonce au handshake est figé en dur (`"0.1.0"` dans `server.py`), pendant
+que `CHANGELOG.md` en est à `0.2.3` : il ne reflète pas l'état réel du code
+et ne peut donc pas servir à distinguer une installation à jour d'une
+installation périmée. Signalé, non corrigé — voir
+`limitations-connues.md`.[^prop-9513]
+
 ## À arbitrer
 
 ### `kb_propose` — aucun canal pour un artefact source (export XML/zip)
@@ -224,3 +244,5 @@ d'intégration.
     `.devcontainer/post-create.sh` (0.2.1) et `src/okf_hub/search.py` (0.2.2),
     voir `CHANGELOG.md` du dépôt okf-hub.
 [^prop-3cb9]: prop-2026-09-01-3cb9, résolu en `accepted/` — le constat est intégré, la piste qu'il propose ne l'est pas.
+
+[^prop-9513]: prop-2026-09-01-9513, résolu en `accepted/` — corrobore prop-2026-09-01-d8ed sans rien apporter de nouveau sur le correctif lui-même ; ce qu'elle apporte, c'est la preuve que le correctif ne se propage pas de lui-même.

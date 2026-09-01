@@ -74,6 +74,24 @@ et une fois la proposition intégrée, ce qui compte est le corpus, lisible par
 Pour une proposition rejetée dont on veut relire le texte exact : accès git
 direct au dépôt de la base, dans `proposals/rejected/`.
 
+## Pas de vérification de fraîcheur de l'installation
+
+**Ce qui se passe.** Un correctif commité au dépôt du hub ne s'applique qu'aux
+installations qui l'ont retiré (`git pull` / rebuild du devcontainer). Le hub
+n'a ni auto-mise-à-jour ni vérification de version au démarrage : une
+installation périmée reproduit indéfiniment un bug déjà corrigé en amont,
+sans qu'aucun message ne le signale.[^prop-9513-lim]
+
+**Aggravant.** Le champ `version` que le serveur MCP annonce au handshake
+est une chaîne figée dans le code (`"0.1.0"`), qui ne suit pas
+`CHANGELOG.md` (à `0.2.3` au 01/09). Il ne peut donc pas servir, en l'état, à
+distinguer une installation à jour d'une installation périmée.
+
+**Contournement.** Comparer à la main l'historique du dépôt du hub local
+(`git -C <hub root> log -1`) à celui d'amont avant de conclure qu'un
+comportement corrigé est encore un bug ; sinon, retirer le dépôt et
+redémarrer le serveur.
+
 ## Aucune validation de conformité OKF
 
 Le hub ne connaît que des chemins. Il n'a aucune opinion sur le contenu et
@@ -101,3 +119,5 @@ c'est le fonctionnement voulu (§ 1.5 : retourner le minimum pertinent).
 Depuis la rév. 4.1, un résultat de `kb_search` porte le heading de sa section
 après `§` : le reporter dans `kb_read(path, section)` donne la section en un
 seul appel. `force: true` reste disponible pour le document entier.
+
+[^prop-9513-lim]: prop-2026-09-01-9513, résolu en `accepted/`.
