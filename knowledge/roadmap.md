@@ -22,6 +22,9 @@ verified:
 - by: claude-code/sonnet-5
   at: '2026-09-01T00:00:00Z'
   note: ajout de la section « Livré — hors révision » (ripgrep)
+- by: claude-code/sonnet-5
+  at: '2026-09-01T12:00:00Z'
+  note: ajout de la section « À arbitrer » (canal d'artefact source)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -154,6 +157,28 @@ formelle de ce retour :
 Le contournement décrit par le retour — navigation manuelle via `kb_read` sur
 `index.md` — est devenu inutile après le correctif.
 
+## À arbitrer
+
+### `kb_propose` — aucun canal pour un artefact source (export XML/zip)
+
+**Retour à l'origine.** Une session disposait d'un export à jour d'un objet Designer
+(archive zip) montrant qu'une fiche générée d'`el2d-referentiel` décrivait un état antérieur
+de l'objet. Aucun paramètre de `kb_propose` ne permet de joindre ou de référencer un
+artefact binaire — `content` est du markdown borné à 16 Ko — et la golden rule 1
+d'`el2d-referentiel` rejette de toute façon toute proposition touchant `designer/` : ces
+fiches sont la propriété exclusive du générateur.[^prop-3cb9]
+
+**Contournement actuel.** Déposer une **analyse** qui décrit le nouvel état et signale
+explicitement qu'elle contredit la fiche générée (golden rule 9 d'`el2d-referentiel` →
+escalade). Documente l'écart, ne le résorbe pas : le corpus généré reste périmé tant que
+personne ne ré-exporte et ne relance `build_catalogue.py` hors du canal `kb_propose`.
+
+**Piste proposée, non arbitrée.** Un dépôt d'artefact tracé, distinct de `kb_propose`, dont
+le générateur de la base concernée serait le seul consommateur — l'intégration restant au
+gestionnaire comme aujourd'hui. Touche à la surface d'écriture du hub (§ 1, § 4.4.b) : à
+remonter au propriétaire de la spécification avant toute implémentation, comme le prévoit le
+CLAUDE.md du dépôt du hub. Pas de décision prise ici.
+
 ## Reporté
 
 ### `kb_search` multi-bases
@@ -198,3 +223,4 @@ d'intégration.
 [^prop-d8ed]: prop-2026-09-01-d8ed, résolu en `accepted/`. Correctifs :
     `.devcontainer/post-create.sh` (0.2.1) et `src/okf_hub/search.py` (0.2.2),
     voir `CHANGELOG.md` du dépôt okf-hub.
+[^prop-3cb9]: prop-2026-09-01-3cb9, résolu en `accepted/` — le constat est intégré, la piste qu'il propose ne l'est pas.
