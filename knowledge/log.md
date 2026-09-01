@@ -3,6 +3,13 @@
 Historique des changements du corpus, groupé par date (convention OKF § 9), le
 plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégration.
 
+## 2026-09-01
+
+* **Roadmap** : intégration de `prop-2026-09-01-d8ed` — `kb_search` échouait
+  avec `IO_ERROR` (ripgrep introuvable), sur deux causes distinctes déjà
+  corrigées côté hub (0.2.1, 0.2.2) au moment de la revue ; consigné en
+  « Livré — hors révision ».
+
 ## 2026-08-30
 
 * **Initialisation** : création de la base à partir de `okf-bundle-template`,

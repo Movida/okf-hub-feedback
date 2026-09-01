@@ -1,25 +1,36 @@
 ---
 type: Roadmap
 title: Roadmap des évolutions de l'outillage du hub
-description: >
-  Ce qui a été décidé, reporté ou refusé sur les outils du hub, avec le motif de
-  chaque décision et le retour d'usage qui l'a provoquée.
-tags: [kb_search, kb_propose, kb_proposal_status, kb_list, kb_hub_rescan, kb-review]
-applies-to: "rév. 4.2"
+description: 'Ce qui a été décidé, reporté ou refusé sur les outils du hub, avec le motif de chaque décision et le retour d''usage qui l''a provoquée.
+
+  '
+tags:
+- kb_search
+- kb_propose
+- kb_proposal_status
+- kb_list
+- kb_hub_rescan
+- kb-review
+applies-to: rév. 4.2
 generated:
   by: claude-code/opus-5
-  at: 2026-08-30T00:00:00Z
+  at: 2026-08-30 00:00:00+00:00
 verified:
-  - by: claude-code/opus-5
-    at: 2026-08-31T00:00:00Z
-    note: "ajout de la section rév. 4.2 (correctif du cooldown de re-scan)"
+- by: claude-code/opus-5
+  at: '2026-08-31T00:00:00Z'
+  note: ajout de la section rév. 4.2 (correctif du cooldown de re-scan)
+- by: claude-code/sonnet-5
+  at: '2026-09-01T00:00:00Z'
+  note: ajout de la section « Livré — hors révision » (ripgrep)
 sources:
-  - id: retour-j5
-    resource: "premier retour d'usage réel d'une session consommatrice, post-J5"
-  - id: amendement-41
-    resource: "docs/SPEC-okf-bundle-hub-v0.md — amendement rév. 4.1"
-  - id: regression-42
-    resource: "docs/SPEC-okf-bundle-hub-v0.md — amendement rév. 4.2"
+- id: retour-j5
+  resource: premier retour d'usage réel d'une session consommatrice, post-J5
+- id: amendement-41
+  resource: docs/SPEC-okf-bundle-hub-v0.md — amendement rév. 4.1
+- id: regression-42
+  resource: docs/SPEC-okf-bundle-hub-v0.md — amendement rév. 4.2
+- id: prop-d8ed
+  resource: prop-2026-09-01-d8ed — kb_search IO_ERROR (ripgrep absent), résolu en proposals/accepted/
 ---
 
 # Roadmap des évolutions de l'outillage
@@ -115,6 +126,34 @@ est désormais compté **séparément par déclencheur**. « Deux `kb_list` en m
 de cinq secondes ne provoquent qu'un seul parcours » reste vrai ; un `kb_list`
 ne prive plus l'appel suivant du re-scan sur `UNKNOWN_BASE`.
 
+## Livré — hors révision
+
+### `kb_search` — message d'erreur ripgrep absent, et installation en devcontainer
+
+**Retour à l'origine.** `kb_search` échouait sur tout appel avec `IO_ERROR:
+ripgrep (rg) introuvable dans le PATH`, reproduit trois fois sur deux bases
+distinctes (`el2d-blueway`, `el2d-referentiel`) dans la même session ;
+`kb_list` et `kb_read` fonctionnaient normalement, panne isolée à la
+dépendance binaire `rg`. La session touchée avait lancé le hub depuis un clone
+vu côté hôte (`hub_root=/home/…`), pas depuis une instance intra-conteneur
+(`/workspaces/…`).[^prop-d8ed]
+
+**Décision.** Livré, sur deux causes distinctes, corrigées avant la clôture
+formelle de ce retour :
+
+- **installation** — `post-create.sh` désactivait par erreur le dépôt Debian
+  officiel (format deb822 dans `sources.list.d`) en tentant d'ignorer un dépôt
+  tiers cassé (`yarn.list`, clé GPG expirée) ; corrigé en tolérant l'échec
+  d'`apt-get update` plutôt qu'en filtrant les sources (0.2.1) ;
+- **message d'erreur** — renvoyait à `.devcontainer/devcontainer.json`, qui ne
+  mentionne pas ripgrep, et n'aidait sur aucun lancement hors création de
+  conteneur ; il nomme désormais le PATH du **processus serveur** (transport
+  stdio, § 4.3) et pointe vers `post-create.sh` et le README (0.2.2), gardé
+  par un test qui vérifie que tout fichier cité existe et parle de ripgrep.
+
+Le contournement décrit par le retour — navigation manuelle via `kb_read` sur
+`index.md` — est devenu inutile après le correctif.
+
 ## Reporté
 
 ### `kb_search` multi-bases
@@ -156,3 +195,6 @@ d'intégration.
 
 [^retour-j5]: Premier retour d'usage réel d'une session consommatrice, post-J5, consolidé par l'amendement rév. 4.1 de la spécification.
 [^regression-42]: Détecté par `test_import_a_chaud_et_rescan_silencieux` (job bout-en-bout), corrigé par l'amendement rév. 4.2 de la spécification. Post-mortem complet : `docs/ARCHITECTURE.md` § 5 bis du dépôt okf-hub.
+[^prop-d8ed]: prop-2026-09-01-d8ed, résolu en `accepted/`. Correctifs :
+    `.devcontainer/post-create.sh` (0.2.1) et `src/okf_hub/search.py` (0.2.2),
+    voir `CHANGELOG.md` du dépôt okf-hub.
