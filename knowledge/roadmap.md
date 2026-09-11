@@ -31,6 +31,9 @@ verified:
 - by: claude-code/sonnet-5
   at: '2026-09-11'
   note: ajout de la section «Livré — hors révision» (deploy-keys.sh, enregistrement automatique par GitHub App)
+- by: claude-code/sonnet-5
+  at: '2026-09-11'
+  note: ajout de la section «À arbitrer» (kb_search sans repli ripgrep ; chemins GOVERNANCE.md non alignés sur kb_read)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -234,6 +237,51 @@ gestionnaire comme aujourd'hui. Touche à la surface d'écriture du hub (§ 1, �
 remonter au propriétaire de la spécification avant toute implémentation, comme le prévoit le
 CLAUDE.md du dépôt du hub. Pas de décision prise ici.
 
+### `kb_search` — aucun repli quand ripgrep est absent du PATH du serveur
+
+**Retour à l'origine.** `kb_search` échoue avec `IO_ERROR: ripgrep (rg)
+introuvable dans le PATH`, reproduit deux fois à ~20 min d'écart, dans une
+session dont le serveur était lancé via le pont d'appareil de Claude Desktop —
+hors devcontainer, donc sans garantie que `rg` y soit installé. `kb_list`,
+`kb_read`, `kb_governance` et `kb_propose` répondaient normalement dans la même
+session : panne isolée à la dépendance binaire, distincte du bug d'installation
+en devcontainer déjà traité ci-dessus (« Livré — hors révision »).[^prop-e36e]
+
+**Coût du contournement.** Sans `kb_search`, seule la descente en cascade des
+`index.md` par `kb_read` permet de localiser un document : cinq appels pour
+atteindre un document sur `phoenix-blueway` (856 documents), dont deux chemins
+devinés à tort. Plus coûteux : sans recherche, impossible de vérifier avant
+dépôt qu'une affirmation figure déjà dans le corpus — la vérification que le
+mode d'emploi recommande avant toute proposition.
+
+**Pistes proposées, non arbitrées.**
+
+- un repli pur Python (sans `rg`) pour `kb_search`, plus lent mais disponible
+  partout où le serveur tourne ;
+- un outil, ou une variante de `kb_read`, qui retourne l'arborescence des
+  chemins d'une base sans leur contenu — résout la navigation indépendamment
+  de ripgrep, et donne au passage la forme exacte des chemins attendus.
+
+Pas de décision prise ici : golden rule 5, le constat est intégré, la mise en
+œuvre ne l'est pas.
+
+### `GOVERNANCE.md` — l'arborescence affichée n'est pas un chemin `kb_read`
+
+**Retour à l'origine.** Dans au moins deux bases (`phoenix-blueway`,
+`el2d-referentiel`), la section « Organisation du corpus » de `GOVERNANCE.md`
+affiche l'arborescence du dépôt avec son préfixe de corpus compris
+(`phoenix-kb/`, `referentiel-kb/`), alors que `kb_read` attend un chemin
+relatif au corpus, sans ce préfixe. Un lecteur qui suit `GOVERNANCE.md`
+construit donc systématiquement un chemin faux.[^prop-e36e]
+
+**Périmètre à confirmer.** Ce constat porte sur le contenu propre de deux
+bases tierces (probablement hérité d'un gabarit commun), pas sur un outil ou
+un script du hub — à la limite de ce que couvre cette base. Consigné ici parce
+que la friction touche directement l'usage de `kb_read`, mais une redite dans
+`phoenix-blueway` et `el2d-referentiel` eux-mêmes serait la voie normale s'il
+s'agit d'un défaut propre à leur documentation plutôt que d'un gabarit
+partagé.
+
 ## Reporté
 
 ### `kb_search` multi-bases
@@ -283,3 +331,5 @@ d'intégration.
 [^prop-9513]: prop-2026-09-01-9513, résolu en `accepted/` — corrobore prop-2026-09-01-d8ed sans rien apporter de nouveau sur le correctif lui-même ; ce qu'elle apporte, c'est la preuve que le correctif ne se propage pas de lui-même.
 
 [^prop-5149]: prop-2026-09-01-5149, résolu en `accepted/` — le constat (étape manuelle reproductible) est intégré ; les pistes qu'il proposait ne le sont pas (golden rule 5), la décision réellement livrée en diffère.
+
+[^prop-e36e]: prop-2026-09-02-e36e, résolu en `accepted/`.
