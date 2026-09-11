@@ -8,6 +8,9 @@ plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégrati
 * **Roadmap** : intégration de `prop-2026-09-01-5149` — enregistrement manuel
   des deploy keys, consigné en « Livré — hors révision » (GitHub App, commit
   `8667394`, déjà en place au moment de la revue).
+* **Roadmap** : intégration de `prop-2026-09-02-e36e` — `kb_search` sans repli
+  quand ripgrep est absent, et chemins de `GOVERNANCE.md` non alignés sur
+  `kb_read`, consignés en « À arbitrer ».
 
 ## 2026-09-01
 
