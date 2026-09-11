@@ -28,6 +28,9 @@ verified:
 - by: claude-code/sonnet-5
   at: '2026-09-01T12:30:00Z'
   note: addendum résidu ripgrep post-correctif (prop-2026-09-01-9513)
+- by: claude-code/sonnet-5
+  at: '2026-09-11'
+  note: ajout de la section «Livré — hors révision» (deploy-keys.sh, enregistrement automatique par GitHub App)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -39,6 +42,8 @@ sources:
   resource: prop-2026-09-01-d8ed — kb_search IO_ERROR (ripgrep absent), résolu en proposals/accepted/
 - id: prop-9513
   resource: prop-2026-09-01-9513 — récidive post-correctif (installation périmée), résolu en proposals/accepted/
+- id: prop-5149
+  resource: prop-2026-09-01-5149 — deploy-keys.sh, enregistrement manuel des deploy keys, résolu en proposals/accepted/
 ---
 
 # Roadmap des évolutions de l'outillage
@@ -177,6 +182,36 @@ et ne peut donc pas servir à distinguer une installation à jour d'une
 installation périmée. Signalé, non corrigé — voir
 `limitations-connues.md`.[^prop-9513]
 
+### `.devcontainer/deploy-keys.sh` — enregistrement automatique de la deploy key
+
+**Retour à l'origine.** `deploy-keys.sh` génère la paire de clés manquante par
+dépôt, mais l'enregistrement de la clé publique côté GitHub (*Settings > Deploy
+keys > Add deploy key*) restait manuel, à répéter à chaque dépôt. Le retour
+cite le bloc « à enregistrer à la main » du script (commit `d5cc03d`, lignes
+144-162) et README.md § deploy keys ; reproduit à l'identique sur les quatre
+bases ajoutées à ce dépôt (`el2d-blueway`, `el2d-referentiel`,
+`okf-hub-feedback`, `phoenix-blueway`). Deux pistes étaient proposées à
+arbitrer — `gh repo deploy-key add` sous authentification de compte, ou un PAT
+fine-grained scopé Administration — en signalant elles-mêmes qu'elles
+élargissent la surface d'un conteneur compromis.[^prop-5149]
+
+**Décision.** Livré (commit `8667394`), sous une troisième forme, plus étroite
+que les deux pistes proposées : une **GitHub App** dédiée, installée une fois
+par l'opérateur hors du conteneur, qui ne lui délivre qu'un **jeton
+d'installation** — scopé aux seuls dépôts où l'App est installée, de courte
+durée de vie (~1h), jamais journalisé ni écrit sur disque. Optionnel : en
+l'absence de `OKF_HUB_GH_APP_TOKEN`, la procédure manuelle reste inchangée, la
+même qu'au moment du retour. Documenté dans `README.md` § « Enregistrement
+automatique de la clé (GitHub App, optionnel) » et `docs/ARCHITECTURE.md`
+§ 5.3 bis, qui détaille ce que la permission GitHub App `Administration : Read
+& write` ouvre au-delà des deploy keys.
+
+**À noter pour la suite.** Les deux pistes que ce retour proposait avaient déjà
+été écartées dans un cycle d'arbitrage antérieur pour le motif qu'il signale
+lui-même — un secret à portée large et durable dans un conteneur qui exécute du
+code de session. Inutile de les ré-instruire si elles reviennent : la décision
+retenue (GitHub App, jeton d'installation borné) est au § 5.3 bis.
+
 ## À arbitrer
 
 ### `kb_propose` — aucun canal pour un artefact source (export XML/zip)
@@ -246,3 +281,5 @@ d'intégration.
 [^prop-3cb9]: prop-2026-09-01-3cb9, résolu en `accepted/` — le constat est intégré, la piste qu'il propose ne l'est pas.
 
 [^prop-9513]: prop-2026-09-01-9513, résolu en `accepted/` — corrobore prop-2026-09-01-d8ed sans rien apporter de nouveau sur le correctif lui-même ; ce qu'elle apporte, c'est la preuve que le correctif ne se propage pas de lui-même.
+
+[^prop-5149]: prop-2026-09-01-5149, résolu en `accepted/` — le constat (étape manuelle reproductible) est intégré ; les pistes qu'il proposait ne le sont pas (golden rule 5), la décision réellement livrée en diffère.

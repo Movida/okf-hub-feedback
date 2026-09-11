@@ -3,6 +3,12 @@
 Historique des changements du corpus, groupé par date (convention OKF § 9), le
 plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégration.
 
+## 2026-09-11
+
+* **Roadmap** : intégration de `prop-2026-09-01-5149` — enregistrement manuel
+  des deploy keys, consigné en « Livré — hors révision » (GitHub App, commit
+  `8667394`, déjà en place au moment de la revue).
+
 ## 2026-09-01
 
 * **Roadmap** : intégration de `prop-2026-09-01-d8ed` — `kb_search` échouait
