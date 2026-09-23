@@ -34,6 +34,9 @@ verified:
 - by: claude-code/sonnet-5
   at: '2026-09-11'
   note: ajout de la section «À arbitrer» (kb_search sans repli ripgrep ; chemins GOVERNANCE.md non alignés sur kb_read)
+- by: claude-code/opus-5.5
+  at: '2026-09-23T00:00:00Z'
+  note: ajout de l'entrée « À arbitrer » kb_read hors corpus-dir (prop-2026-09-14-be3b)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -237,6 +240,36 @@ gestionnaire comme aujourd'hui. Touche à la surface d'écriture du hub (§ 1, �
 remonter au propriétaire de la spécification avant toute implémentation, comme le prévoit le
 CLAUDE.md du dépôt du hub. Pas de décision prise ici.
 
+### `kb_read` — un fichier source hors `corpus-dir` ne se lit pas
+
+**Retour à l'origine.** En diagnostiquant une perte de décimales sur
+processus-x, le 14/09, une session a constaté que les fiches `-contenu.md`
+générées de `referentiel-x` omettaient trois informations présentes dans les
+exports XML : les affectations des `insert`/`update`, les `paramOUT`/`paramERR`
+des traitements d'écran, le texte des Formules. Elle demandait de les rendre,
+« ou à défaut [d']exposer les XML source via `kb_read` ».[^prop-be3b]
+
+**Ce qui est d'ici, et ce qui ne l'est pas.** Le défaut de rendu relève de
+l'outillage propre de `referentiel-x` : ni un outil du hub, ni un contenu
+déposable dans cette base (`GOVERNANCE.md`, « N'appartient PAS »). Il a été
+signalé et corrigé dans le dépôt de la base, en ligne de commande, le 16/09
+(commit `f9bb3ed` de `referentiel-x`). Seul le repli — que `kb_read` serve un
+fichier du dépôt hors `corpus-dir` — porte sur un outil du hub.
+
+**État au 23/09.** `kb_read` est confiné à `corpus-dir` (§ 5.3) : un XML sous
+`source/` ne se lit pas. Depuis le 10/09 (commit `4102cf4` du hub), un tel
+chemin reçoit un `NOT_FOUND` qui dit qu'un fichier existe à cet endroit,
+relatif à la racine du dépôt de la base, hors du corpus consultable. L'échec
+n'est plus muet ; il reste un échec.
+
+**Pas de décision prise ici.** Le cas qui motivait la demande est résolu à la
+source : les fiches rendent désormais les trois éléments. Élargir ce que
+`kb_read` peut lire toucherait au confinement du § 5.3 : comme pour le dépôt
+d'artefact ci-dessus, à remonter au propriétaire de la spécification avant
+toute implémentation. Côté lecture et côté dépôt, c'est la même question —
+l'artefact source d'une base générée est-il, par principe, hors de portée des
+outils `kb_*` ? — et elle gagne à être tranchée d'un seul tenant.
+
 ### `kb_search` — aucun repli quand ripgrep est absent du PATH du serveur
 
 **Retour à l'origine.** `kb_search` échoue avec `IO_ERROR: ripgrep (rg)
@@ -333,3 +366,5 @@ d'intégration.
 [^prop-5149]: prop-2026-09-01-5149, résolu en `accepted/` — le constat (étape manuelle reproductible) est intégré ; les pistes qu'il proposait ne le sont pas (golden rule 5), la décision réellement livrée en diffère.
 
 [^prop-e36e]: prop-2026-09-02-e36e, résolu en `accepted/`.
+
+[^prop-be3b]: prop-2026-09-14-be3b, résolu en `accepted/` — seule la part qui vise `kb_read` est intégrée ; le défaut de générateur, hors périmètre, est corrigé dans `referentiel-x` (commit `f9bb3ed`).

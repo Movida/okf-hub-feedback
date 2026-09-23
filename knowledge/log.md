@@ -3,6 +3,13 @@
 Historique des changements du corpus, groupé par date (convention OKF § 9), le
 plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégration.
 
+## 2026-09-23
+
+* **Roadmap** : intégration de `prop-2026-09-14-be3b` — sa seule part d'ici,
+  que `kb_read` serve un fichier source hors `corpus-dir`, consignée en
+  « À arbitrer ». Le défaut de rendu des fiches, outillage propre
+  de `referentiel-x`, y a été corrigé le 16/09 (commit `f9bb3ed`).
+
 ## 2026-09-11
 
 * **Roadmap** : intégration de `prop-2026-09-01-5149` — enregistrement manuel
