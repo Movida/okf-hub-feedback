@@ -9,6 +9,14 @@ plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégrati
   que `kb_read` serve un fichier source hors `corpus-dir`, consignée en
   « À arbitrer ». Le défaut de rendu des fiches, outillage propre
   de `referentiel-x`, y a été corrigé le 16/09 (commit `f9bb3ed`).
+* **Roadmap** et **Limitations** : rattrapage sur le code du hub
+  (`prop-2026-09-23-af92`), sans nouveau retour d'usage. `kb_search` multi-bases
+  passe de « Reporté » à « Livré — hors révision » (livré le 02/09, 0.2.4) ;
+  la version annoncée au handshake n'est plus figée (0.2.6) ; « Recherche
+  mono-base » et « Aucune synchronisation avec un remote » réécrites, devenues
+  fausses le 02/09 ; « Visibilité des bases » complétée de l'observateur de
+  `bases-dir` (02/09) ; l'entrée `GOVERNANCE.md` d'« À arbitrer » complétée
+  du diagnostic `NOT_FOUND` de `kb_read` (10/09).
 
 ## 2026-09-11
 

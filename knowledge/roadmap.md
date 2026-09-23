@@ -14,7 +14,7 @@ tags:
 applies-to: rév. 4.2
 generated:
   by: claude-code/opus-5
-  at: 2026-08-30 00:00:00+00:00
+  at: '2026-08-30T00:00:00Z'
 verified:
 - by: claude-code/opus-5
   at: '2026-08-31T00:00:00Z'
@@ -29,14 +29,17 @@ verified:
   at: '2026-09-01T12:30:00Z'
   note: addendum résidu ripgrep post-correctif (prop-2026-09-01-9513)
 - by: claude-code/sonnet-5
-  at: '2026-09-11'
+  at: '2026-09-11T00:00:00Z'
   note: ajout de la section «Livré — hors révision» (deploy-keys.sh, enregistrement automatique par GitHub App)
 - by: claude-code/sonnet-5
-  at: '2026-09-11'
+  at: '2026-09-11T00:00:00Z'
   note: ajout de la section «À arbitrer» (kb_search sans repli ripgrep ; chemins GOVERNANCE.md non alignés sur kb_read)
 - by: claude-code/opus-5.5
   at: '2026-09-23T00:00:00Z'
   note: ajout de l'entrée « À arbitrer » kb_read hors corpus-dir (prop-2026-09-14-be3b)
+- by: claude-code/opus-5.5
+  at: '2026-09-23T00:00:00Z'
+  note: 'rattrapage sur le code du hub (prop-2026-09-23-af92) : version au handshake, kb_search multi-bases livré, NOT_FOUND de kb_read ; horodatages au format OKF 0.2 (datetime ISO 8601 avec décalage)'
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -182,11 +185,16 @@ simplement pas retiré le dépôt depuis avant le correctif. Mais rien ne le
 signale à une session qui heurte l'erreur — un correctif commité au dépôt du
 hub ne s'applique qu'aux installations qui l'ont retiré, et aucune n'a de
 moyen de savoir si c'est son cas. Le champ `version` que le serveur MCP
-annonce au handshake est figé en dur (`"0.1.0"` dans `server.py`), pendant
-que `CHANGELOG.md` en est à `0.2.3` : il ne reflète pas l'état réel du code
-et ne peut donc pas servir à distinguer une installation à jour d'une
-installation périmée. Signalé, non corrigé — voir
-`limitations-connues.md`.[^prop-9513]
+annonçait alors au handshake était figé en dur (`"0.1.0"` dans `server.py`),
+pendant que `CHANGELOG.md` en était à `0.2.3` : il ne reflétait pas l'état
+réel du code et ne pouvait donc pas servir à distinguer une installation à
+jour d'une installation périmée.[^prop-9513]
+
+**Corrigé le 02/09, en 0.2.6** (commit `59abfbb`) : la version annoncée vient
+des métadonnées du paquet installé, donc de `pyproject.toml`, remonté au
+passage (0.2.8 au 23/09). Elle distingue deux versions publiées, pas deux
+états du code entre deux publications. Ce qui reste — aucune vérification de
+fraîcheur — est décrit dans `limitations-connues.md`.[^rattrapage-0923]
 
 ### `.devcontainer/deploy-keys.sh` — enregistrement automatique de la deploy key
 
@@ -217,6 +225,29 @@ automatique de la clé (GitHub App, optionnel) » et `docs/ARCHITECTURE.md`
 lui-même — un secret à portée large et durable dans un conteneur qui exécute du
 code de session. Inutile de les ré-instruire si elles reviennent : la décision
 retenue (GitHub App, jeton d'installation borné) est au § 5.3 bis.
+
+### `kb_search` multi-bases
+
+**Demande.** Pouvoir passer `base: [...]` ou `base: "*"` pour chercher dans
+plusieurs bases d'un coup.[^retour-j5] Reportée d'abord en v1 optionnelle, sur
+un seul retour, avec une spec pré-cadrée pour que la reprise soit mécanique.
+
+**Décision.** Livré le 02/09, en 0.2.4 (commit `bcd1fbb`, § 10.3), à la lettre
+de cette spec pré-cadrée : `base` accepte un nom, une liste de noms, ou `"*"`
+pour toutes les bases enregistrées. `max_results` reste un plafond **global
+unique**, réparti à parts égales entre les bases qui ont encore des résultats,
+le reliquat d'une base à court profitant aux autres — jamais un plafond par
+base. Les résultats sont **groupés par base** ; une base sans résultat
+n'apparaît pas. Un nom unique garde une sortie strictement identique à
+l'avant. Un nom inconnu dans une liste fait échouer tout l'appel en
+`UNKNOWN_BASE`, avant toute recherche.[^rattrapage-0923]
+
+**Ce qu'il faut savoir en l'utilisant.** Ce qui est réparti, c'est le
+**nombre** de résultats. Le budget de sortie (~4 000 tokens) reste celui d'un
+seul appel : les bases sont écrites dans l'ordre de la liste (alphabétique
+pour `"*"`), et quand une base épuise le budget, les suivantes n'affichent plus
+que leur en-tête. Voir `limitations-connues.md`, « `kb_search` : un plafond de
+sortie, même sur plusieurs bases ».
 
 ## À arbitrer
 
@@ -307,28 +338,28 @@ affiche l'arborescence du dépôt avec son préfixe de corpus compris
 relatif au corpus, sans ce préfixe. Un lecteur qui suit `GOVERNANCE.md`
 construit donc systématiquement un chemin faux.[^prop-e36e]
 
-**Périmètre à confirmer.** Ce constat porte sur le contenu propre de deux
+**État au 23/09.** Le constat vaut pour trois bases : `installation-x` affiche
+de même `installation-kb/`. Depuis le 10/09 (commit `4102cf4` du hub), un chemin
+préfixé ne reçoit plus un `NOT_FOUND` muet : le message dit qu'un fichier
+existe à ce chemin relatif à la racine du dépôt, et donne `corpus-dir`. Il le
+range pourtant parmi les fichiers « source ou de travail, hors du corpus
+consultable », alors que c'est le document du corpus lui-même, préfixe en
+double — reproduit sur `produit-kb/index.md` et `referentiel-x-kb/index.md`.
+Le message aide à trouver le bon chemin ; il en dit une raison
+fausse.[^rattrapage-0923]
+
+**Périmètre à confirmer.** Ce constat porte sur le contenu propre de trois
 bases tierces (probablement hérité d'un gabarit commun), pas sur un outil ou
 un script du hub — à la limite de ce que couvre cette base. Consigné ici parce
 que la friction touche directement l'usage de `kb_read`, mais une redite dans
-`produit-x` et `referentiel-x` eux-mêmes serait la voie normale s'il
-s'agit d'un défaut propre à leur documentation plutôt que d'un gabarit
-partagé.
+ces bases elles-mêmes serait la voie normale s'il s'agit d'un défaut propre à
+leur documentation plutôt que d'un gabarit partagé. Le libellé du `NOT_FOUND`,
+lui, est bien d'ici.
 
 ## Reporté
 
-### `kb_search` multi-bases
-
-**Demande.** Pouvoir passer `base: [...]` ou `base: "*"` pour chercher dans
-plusieurs bases d'un coup.[^retour-j5]
-
-**Décision : reportée en v1 optionnelle**, sur un seul retour. Élargir la
-surface d'outils se paie sur toutes les sessions ; on attend la récurrence.
-
-**Spec pré-cadrée**, pour que la reprise soit mécanique le jour venu : plafond
-de sortie **global unique**, réparti entre les bases interrogées (et non un
-plafond par base, qui multiplierait la sortie par le nombre de bases) ;
-résultats **groupés par base**.
+Rien en report au 23/09. La seule entrée, `kb_search` multi-bases, est livrée
+depuis le 02/09 — voir « Livré — hors révision ».
 
 ## Refusé
 
@@ -368,3 +399,5 @@ d'intégration.
 [^prop-e36e]: prop-2026-09-02-e36e, résolu en `accepted/`.
 
 [^prop-be3b]: prop-2026-09-14-be3b, résolu en `accepted/` — seule la part qui vise `kb_read` est intégrée ; le défaut de générateur, hors périmètre, est corrigé dans `referentiel-x` (commit `f9bb3ed`).
+
+[^rattrapage-0923]: prop-2026-09-23-af92, résolu en `accepted/` — rattrapage de la base sur le code du hub au 23/09, sans nouveau retour d'usage : version au handshake (0.2.6, `59abfbb`), `kb_search` multi-bases (0.2.4, `bcd1fbb`), synchronisation au démarrage (0.2.5, `5f5874e`), diagnostic `NOT_FOUND` de `kb_read` (`4102cf4`), observateur de `bases-dir` (`0427433`). Voir `CHANGELOG.md` du dépôt okf-hub.

@@ -14,6 +14,10 @@ sources:
     resource: "README.md du dépôt okf-hub — section « Limitations v0 assumées »"
   - id: spec-v0
     resource: "docs/SPEC-okf-bundle-hub-v0.md"
+verified:
+  - by: claude-code/opus-5.5
+    at: '2026-09-23T00:00:00Z'
+    note: 'rattrapage sur le code du hub (prop-2026-09-23-af92) : synchronisation au démarrage, version au handshake, kb_search multi-bases, observateur de bases-dir'
 ---
 
 # Limitations connues
@@ -33,10 +37,19 @@ propre registre.
 cooldown de 5 s) : une base importée est donc visible de toute session qui
 liste, sans rescan explicite ni redémarrage.
 
+**Depuis le 02/09** (commit `0427433` du hub, encore sous « Non publié » dans
+`CHANGELOG.md` au 23/09), chaque instance observe aussi son propre
+`bases-dir` : un répertoire de base créé ou supprimé déclenche le même re-scan,
+sans attendre un `kb_list`. Toujours par instance, sans état partagé
+(§ 4.4.a).[^rattrapage-0923]
+
 **Ce qui reste.** La *description* de l'outil `kb_list`, telle que l'affiche le
 client, peut rester périmée si celui-ci ignore la notification
-`tools/list_changed`. Le contenu retourné par l'appel, lui, est à jour.
-C'est cosmétique.
+`tools/list_changed`. Depuis l'observateur, elle le reste aussi chez un client
+qui l'honore : le re-scan de l'observateur n'a pas de session à notifier, et
+le `kb_list` suivant, qui trouve le registre déjà à jour, n'a plus de
+changement à signaler (reproduit le 23/09 ; signalé, correctif en cours dans
+le hub). Le contenu retourné par l'appel, lui, est à jour. C'est cosmétique.
 
 ## `submitted_by` n'est pas authentifié
 
@@ -51,14 +64,23 @@ quelle identité. Conséquences pratiques :
 Le modèle de menace de la v0 est mono-utilisateur (§ 8). L'authentification
 n'est pas au programme.
 
-## Aucune synchronisation avec un remote
+## Synchronisation avec un remote : au démarrage seulement, jamais de push
 
-Le hub travaille sur des clones locaux. Il ne fait ni `fetch`, ni `pull`, ni
-`push` (§ 4.5). Un bundle mis à jour en amont ne l'est pas sur le hub tant que
-personne ne l'a tiré à la main.
+**Depuis le 02/09** (0.2.5, commit `5f5874e` du hub), chaque instance du
+serveur tire, à son démarrage et avant sa première découverte, les bases qui
+ont un remote — en **fast-forward seulement**. Une base en avance sur son amont
+(propositions déposées, jamais poussées) n'est pas touchée. Une **divergence**
+est journalisée dans `hub.log`, jamais fusionnée ni écrasée. Un remote
+injoignable ne bloque pas le démarrage. Désactivable par
+`sync-on-start: false`.[^rattrapage-0923]
 
-**Contournement.** Tirer explicitement, et **sous le verrou de la base** — sans
-quoi un `kb_propose` concurrent pourrait s'intercaler :
+**Ce qui reste.** Rien n'est tiré en cours de session : une base mise à jour
+en amont après le démarrage d'une instance ne l'est pas pour elle avant son
+prochain démarrage. Une divergence se résout à la main. Et rien n'est poussé.
+
+**Contournement**, en cours de session : tirer explicitement, et **sous le
+verrou de la base** — sans quoi un `kb_propose` concurrent pourrait
+s'intercaler :
 
 ```sh
 okf-lock <base> -- sh -c "git -C \"\$(okf-base-path <base> root)\" pull --ff-only"
@@ -82,15 +104,18 @@ n'a ni auto-mise-à-jour ni vérification de version au démarrage : une
 installation périmée reproduit indéfiniment un bug déjà corrigé en amont,
 sans qu'aucun message ne le signale.[^prop-9513-lim]
 
-**Aggravant.** Le champ `version` que le serveur MCP annonce au handshake
-est une chaîne figée dans le code (`"0.1.0"`), qui ne suit pas
-`CHANGELOG.md` (à `0.2.3` au 01/09). Il ne peut donc pas servir, en l'état, à
-distinguer une installation à jour d'une installation périmée.
+**Ce qui a changé le 02/09.** Le champ `version` que le serveur annonce au
+handshake n'est plus une chaîne figée (`"0.1.0"` jusqu'en 0.2.5) : depuis
+0.2.6 (commit `59abfbb`), il vient des métadonnées du paquet, donc de
+`pyproject.toml`. Il permet de comparer une installation à la dernière version
+publiée de `CHANGELOG.md`. Il ne distingue pas deux états du code entre deux
+publications : ce qui figure sous « Non publié » porte la même version que la
+dernière publiée.[^rattrapage-0923]
 
-**Contournement.** Comparer à la main l'historique du dépôt du hub local
-(`git -C <hub root> log -1`) à celui d'amont avant de conclure qu'un
-comportement corrigé est encore un bug ; sinon, retirer le dépôt et
-redémarrer le serveur.
+**Contournement.** Comparer la version annoncée au handshake à la dernière de
+`CHANGELOG.md` en amont ; pour un correctif encore non publié, comparer
+l'historique du dépôt du hub local (`git -C <hub root> log -1`) à celui
+d'amont. Sinon, retirer le dépôt et redémarrer le serveur.
 
 ## Aucune validation de conformité OKF
 
@@ -104,11 +129,27 @@ Une seule exception, et c'est un écart documenté : `index.md` et `log.md` sont
 denses en texte de liens. Ils restent lisibles par `kb_read` et comptés par
 `kb_list`.
 
-## Recherche mono-base
+## `kb_search` : un plafond de sortie, même sur plusieurs bases
 
-`kb_search` interroge une base à la fois. L'extension multi-bases est reportée —
-voir `roadmap.md`, section « Reporté ». En attendant : un appel par base, en
-s'appuyant sur les descriptions de `kb_list` pour router.
+**Depuis le 02/09** (0.2.4, commit `bcd1fbb`), `kb_search` interroge une ou
+plusieurs bases : `base` accepte un nom, une liste de noms, ou `"*"` — voir
+`roadmap.md`, « Livré — hors révision ». Ce n'est plus un appel par base à
+enchaîner.
+
+**Ce qui reste.** La sortie est plafonnée en volume (~4 000 tokens) : un seul
+budget pour l'appel, quel que soit le nombre de bases. Les résultats
+s'ajoutent dans l'ordre — base par base, puis par pertinence — et l'ajout
+s'arrête **définitivement** au premier qui dépasse le budget restant : tout ce
+qui suit est omis, y compris les bases suivantes, qui n'affichent plus que
+leur en-tête. Relever `max_results` ne fait donc jamais réapparaître un
+résultat masqué, et le baisser non plus. Le message de troncature le dit
+depuis le 10/09 ; il conseillait auparavant de réduire
+`max_results`.[^rattrapage-0923]
+
+**Contournement.** Router vers une seule base par les descriptions de
+`kb_list` quand c'est possible ; n'interroger plusieurs bases que si le sujet
+est vraiment à cheval ; reformuler la requête, seul levier qui change ce qui
+arrive en tête.
 
 ## Gros documents : deux appels, ou un seul
 
@@ -121,3 +162,5 @@ après `§` : le reporter dans `kb_read(path, section)` donne la section en un
 seul appel. `force: true` reste disponible pour le document entier.
 
 [^prop-9513-lim]: prop-2026-09-01-9513, résolu en `accepted/`.
+
+[^rattrapage-0923]: prop-2026-09-23-af92, résolu en `accepted/` — rattrapage de la base sur le code du hub au 23/09, sans nouveau retour d'usage : version au handshake (0.2.6, `59abfbb`), `kb_search` multi-bases (0.2.4, `bcd1fbb`), synchronisation au démarrage (0.2.5, `5f5874e`), diagnostic `NOT_FOUND` de `kb_read` (`4102cf4`), observateur de `bases-dir` (`0427433`). Voir `CHANGELOG.md` du dépôt okf-hub.
