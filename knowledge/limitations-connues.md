@@ -18,6 +18,9 @@ verified:
   - by: claude-code/opus-5.5
     at: '2026-09-23T00:00:00Z'
     note: 'rattrapage sur le code du hub (prop-2026-09-23-af92) : synchronisation au démarrage, version au handshake, kb_search multi-bases, observateur de bases-dir'
+  - by: claude-code/opus-5.5
+    at: '2026-10-27T00:00:00Z'
+    note: ajout de « Les propositions en attente ne sont pas cherchées » (prop-2026-10-27-678b)
 ---
 
 # Limitations connues
@@ -151,6 +154,14 @@ depuis le 10/09 ; il conseillait auparavant de réduire
 est vraiment à cheval ; reformuler la requête, seul levier qui change ce qui
 arrive en tête.
 
+## Les propositions en attente ne sont pas cherchées
+
+**Ce qui se passe.** `kb_search` ne cherche que dans le corpus, et `proposals/` en est exclu par construction (§ 2, et liste d'exclusions transverse du § 5.2). Une proposition déposée par `kb_propose` reste donc introuvable par `kb_search` jusqu'à son intégration. Constaté le 27/10/2026 : aucun résultat sur un numéro de ticket d'éditeur que citait une proposition en attente depuis la veille.[^prop-678b-lim]
+
+**Ce que ça coûte.** Plus la file d'attente s'allonge, plus le savoir récent échappe aux sessions : 261 propositions en attente sur un hub de 8 bases le 27/10/2026. Les pistes sont dans `roadmap.md`, « À arbitrer ».
+
+**Contournement.** `kb_list` avec `include_pending_concerns` donne l'`id`, le `type` et le `concerns` des propositions en attente, pas leur contenu ; et cette liste est la première tronquée quand la sortie dépasse son plafond (§ 5.1), avec un message qui renvoie à une option que l'outil n'a pas (voir `roadmap.md`, « Consultation par un humain »). Pour ce qu'a déposé un contributeur connu : `kb_proposal_status` avec `submitted_by` et `status: pending`. Sinon, accès git direct à `proposals/pending/` de la base.
+
 ## Gros documents : deux appels, ou un seul
 
 Au-delà de `read-toc-threshold`, `kb_read` sans `section` retourne la **table
@@ -164,3 +175,5 @@ seul appel. `force: true` reste disponible pour le document entier.
 [^prop-9513-lim]: prop-2026-09-01-9513, résolu en `accepted/`.
 
 [^rattrapage-0923]: prop-2026-09-23-af92, résolu en `accepted/` — rattrapage de la base sur le code du hub au 23/09, sans nouveau retour d'usage : version au handshake (0.2.6, `59abfbb`), `kb_search` multi-bases (0.2.4, `bcd1fbb`), synchronisation au démarrage (0.2.5, `5f5874e`), diagnostic `NOT_FOUND` de `kb_read` (`4102cf4`), observateur de `bases-dir` (`0427433`). Voir `CHANGELOG.md` du dépôt okf-hub.
+
+[^prop-678b-lim]: prop-2026-10-27-678b, résolu en `accepted/`.

@@ -9,6 +9,10 @@ plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégrati
   par un humain, sans autre accès qu'une session MCP ou les fichiers des dépôts :
   demande d'interface web en lecture seule consignée en « À arbitrer », avec la
   voie inexistante qu'indique le message de troncature de `kb_list` (§ 5.1).
+* **Limitations** et **Roadmap** : intégration de `prop-2026-10-27-678b` —
+  `kb_search` ne voit pas les propositions en attente : limitation assumée
+  (§ 5.2) décrite avec son contournement, trois pistes consignées en
+  « À arbitrer ».
 
 ## 2026-09-23
 

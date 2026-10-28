@@ -43,6 +43,9 @@ verified:
 - by: claude-code/opus-5.5
   at: '2026-10-27T00:00:00Z'
   note: ajout de l'entrée « À arbitrer » consultation par un humain, interface web en lecture seule, et divergence du message de troncature de kb_list (prop-2026-10-26-1ee6)
+- by: claude-code/opus-5.5
+  at: '2026-10-27T00:00:00Z'
+  note: ajout de l'entrée « À arbitrer » kb_search et propositions en attente (prop-2026-10-27-678b)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -371,6 +374,20 @@ lui, est bien d'ici.
 
 Pas de décision prise ici : golden rule 5, le constat est intégré, la demande reste à arbitrer.
 
+### `kb_search` ne voit pas les propositions en attente
+
+**Retour à l'origine.** Le 27/10/2026 vers 08:10 (heure de Paris), sur un hub de 8 bases : `kb_list` avec `include_pending_concerns` comptait 261 propositions en attente, dont 97, 72 et 55 pour trois bases métier ; les plus anciennes listées avaient 8 jours. `kb_search` avec `base: "*"` sur un numéro de ticket d'éditeur ne rendait aucun résultat, alors qu'une proposition en attente depuis la veille portait ce numéro dans son `concerns`. Sur une base dont une vue est générée à l'intégration, la dernière intégration datait de 5 jours : la vue s'arrêtait à cette date.[^prop-678b]
+
+**Effet en usage.** Plusieurs sessions automatiques déposent chaque jour. Tant que la revue n'a pas lieu, ce qu'une session a appris est invisible à la suivante par `kb_search` : elle refait l'enquête, ou dépose un doublon. Le comportement est conforme au modèle : voir `limitations-connues.md`, « Les propositions en attente ne sont pas cherchées ».
+
+**Pistes proposées, non arbitrées.**
+
+- une option de `kb_search` qui cherche aussi dans `proposals/pending/`, résultats marqués « non intégré » — elle toucherait à la liste d'exclusions transverse du § 5.2, dont `kb_proposal_status` est aujourd'hui la seule exception ;
+- une cadence de revue régulière (`kb-review` quotidienne, ou à heure fixe), pour que la file ne dépasse pas quelques jours ;
+- dans `kb_list`, la date de la plus ancienne proposition en attente de chaque base, pour voir le retard d'un coup d'œil.
+
+Pas de décision prise ici : golden rule 5, le constat est intégré, la mise en œuvre ne l'est pas.
+
 ## Reporté
 
 Rien en report au 23/09. La seule entrée, `kb_search` multi-bases, est livrée
@@ -418,3 +435,5 @@ d'intégration.
 [^rattrapage-0923]: prop-2026-09-23-af92, résolu en `accepted/` — rattrapage de la base sur le code du hub au 23/09, sans nouveau retour d'usage : version au handshake (0.2.6, `59abfbb`), `kb_search` multi-bases (0.2.4, `bcd1fbb`), synchronisation au démarrage (0.2.5, `5f5874e`), diagnostic `NOT_FOUND` de `kb_read` (`4102cf4`), observateur de `bases-dir` (`0427433`). Voir `CHANGELOG.md` du dépôt okf-hub.
 
 [^prop-1ee6]: prop-2026-10-26-1ee6, résolu en `accepted/` — le constat est intégré ; la demande d'interface reste à arbitrer.
+
+[^prop-678b]: prop-2026-10-27-678b, résolu en `accepted/` — le constat est intégré ; ses trois pistes ne le sont pas (golden rule 5).
