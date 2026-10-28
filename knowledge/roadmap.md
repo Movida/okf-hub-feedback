@@ -40,6 +40,9 @@ verified:
 - by: claude-code/opus-5.5
   at: '2026-09-23T00:00:00Z'
   note: 'rattrapage sur le code du hub (prop-2026-09-23-af92) : version au handshake, kb_search multi-bases livré, NOT_FOUND de kb_read ; horodatages au format OKF 0.2 (datetime ISO 8601 avec décalage)'
+- by: claude-code/opus-5.5
+  at: '2026-10-27T00:00:00Z'
+  note: ajout de l'entrée « À arbitrer » consultation par un humain, interface web en lecture seule, et divergence du message de troncature de kb_list (prop-2026-10-26-1ee6)
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -356,6 +359,18 @@ ces bases elles-mêmes serait la voie normale s'il s'agit d'un défaut propre à
 leur documentation plutôt que d'un gabarit partagé. Le libellé du `NOT_FOUND`,
 lui, est bien d'ici.
 
+### Consultation par un humain : une interface web en lecture seule
+
+**Retour à l'origine.** Le 26/10/2026, sur un hub de 8 bases servi par une passerelle MCP locale, une session à qui l'on demandait si une procédure existait a enchaîné 6 appels `kb_search` (mots-clés puis regex, sur `base: "*"` puis sur une seule base) et 1 `kb_read` avant de conclure qu'il n'y en avait pas : la sortie étant plafonnée, une absence ne se prouve que par reformulations successives (voir `limitations-connues.md`, « `kb_search` : un plafond de sortie, même sur plusieurs bases »). Aucun outil ne liste les documents d'une base filtrés par leur `type` de frontmatter, alors que la base visée a un type `Procédure` dans son vocabulaire fermé. `kb_list` avec `include_pending_concerns` tronquait sa sortie, avec 70 à 74 propositions en attente dans deux bases. Côté humain, aucun autre accès que la session MCP ou la lecture des fichiers dans les dépôts git : ni l'`index.md` d'une base à parcourir, ni lien entre bases `<base>:/<chemin>` à suivre, ni propositions en attente à consulter.[^prop-1ee6]
+
+**Divergence relevée.** Le message de troncature de `kb_list` conseille d'utiliser « kb_list par base », mais l'outil n'a qu'un paramètre, `include_pending_concerns` (§ 5.1) : la voie qu'il indique n'existe pas. `kb_proposal_status` accepte une base, mais exige `id` ou `submitted_by`. Vérifié sur le code du hub au 27/10/2026 (0.2.8, `src/okf_hub/tools/list_tool.py`).
+
+**Demande.** Une interface web de consultation des bases du hub, en lecture seule : la liste des bases (objet, nombre de documents, propositions en attente), comme `kb_list` ; la navigation dans chaque base depuis son `index.md`, documents rendus avec leur frontmatter ; les liens `<base>:/<chemin>` résolus en liens cliquables ; des filtres par `type` et par `tags` ; la recherche plein texte, comme `kb_search` ; les propositions en attente, intégrées et rejetées de chaque base, avec leur motif, comme `kb_proposal_status` ; le `log.md` de chaque base.
+
+**Points à arbitrer, soulevés par le retour.** Chaque client MCP a sa propre instance du hub (`limitations-connues.md`, « Visibilité des bases entre sessions ») : une interface partagée suppose un processus de lecture commun. Le refus du re-scan « partagé au niveau du hub » (ci-dessous, « Refusé ») portait sur un état en mémoire qui ferait autorité, pas sur une lecture du disque. Reste l'accès — réseau, authentification —, puisque des bases privées n'ont pas vocation à être publiques.
+
+Pas de décision prise ici : golden rule 5, le constat est intégré, la demande reste à arbitrer.
+
 ## Reporté
 
 Rien en report au 23/09. La seule entrée, `kb_search` multi-bases, est livrée
@@ -401,3 +416,5 @@ d'intégration.
 [^prop-be3b]: prop-2026-09-14-be3b, résolu en `accepted/` — seule la part qui vise `kb_read` est intégrée ; le défaut de générateur, hors périmètre, est corrigé dans `referentiel-x` (commit `f9bb3ed`).
 
 [^rattrapage-0923]: prop-2026-09-23-af92, résolu en `accepted/` — rattrapage de la base sur le code du hub au 23/09, sans nouveau retour d'usage : version au handshake (0.2.6, `59abfbb`), `kb_search` multi-bases (0.2.4, `bcd1fbb`), synchronisation au démarrage (0.2.5, `5f5874e`), diagnostic `NOT_FOUND` de `kb_read` (`4102cf4`), observateur de `bases-dir` (`0427433`). Voir `CHANGELOG.md` du dépôt okf-hub.
+
+[^prop-1ee6]: prop-2026-10-26-1ee6, résolu en `accepted/` — le constat est intégré ; la demande d'interface reste à arbitrer.

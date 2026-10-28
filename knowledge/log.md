@@ -3,6 +3,13 @@
 Historique des changements du corpus, groupé par date (convention OKF § 9), le
 plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégration.
 
+## 2026-10-27
+
+* **Roadmap** : intégration de `prop-2026-10-26-1ee6` — consultation des bases
+  par un humain, sans autre accès qu'une session MCP ou les fichiers des dépôts :
+  demande d'interface web en lecture seule consignée en « À arbitrer », avec la
+  voie inexistante qu'indique le message de troncature de `kb_list` (§ 5.1).
+
 ## 2026-09-23
 
 * **Roadmap** : intégration de `prop-2026-09-14-be3b` — sa seule part d'ici,
