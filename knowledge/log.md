@@ -3,6 +3,21 @@
 Historique des changements du corpus, groupé par date (convention OKF § 9), le
 plus récent en premier. Le gestionnaire y ajoute une ligne à chaque intégration.
 
+## 2026-11-02
+
+* **Roadmap** et **Limitations** : rattrapage sur le code du hub au 02/11
+  (0.3.1, spec rév. 4.7, `prop-2026-11-02-42c1`), sans nouveau retour d'usage.
+  « Consultation par un humain » passe d'« À arbitrer » à « Livré — rév. 4.5
+  et 4.6 », la divergence du message de `kb_list` y est dite corrigée ;
+  « `kb_search` ne voit pas les propositions en attente » passe à « Livré —
+  rév. 4.7 », avec le motif de chaque option non retenue ; l'entrée
+  `GOVERNANCE.md` passe à « Livré — hors révision » (libellé du `NOT_FOUND`
+  corrigé) ; l'entrée ripgrep reçoit son état au 02/11 (`kb_find`). Côté
+  limitations : propositions en attente cherchées sur demande, après le corpus ;
+  notification de l'observateur corrigée depuis le 23/09 ; version relevée sous
+  « Non publié » ; profil et avertissements de `cites` (rév. 4.5) ; corps d'une
+  proposition lisible dans `okf-hub web`.
+
 ## 2026-10-27
 
 * **Roadmap** : intégration de `prop-2026-10-26-1ee6` — consultation des bases

@@ -11,7 +11,9 @@ tags:
 - kb_list
 - kb_hub_rescan
 - kb-review
-applies-to: rév. 4.2
+- kb_find
+- kb_read
+applies-to: rév. 4.7
 generated:
   by: claude-code/opus-5
   at: '2026-08-30T00:00:00Z'
@@ -46,6 +48,9 @@ verified:
 - by: claude-code/opus-5.5
   at: '2026-10-27T00:00:00Z'
   note: ajout de l'entrée « À arbitrer » kb_search et propositions en attente (prop-2026-10-27-678b)
+- by: claude-code/opus-5.5
+  at: '2026-11-02T00:00:00Z'
+  note: rattrapage sur le code du hub au 02/11 (prop-2026-11-02-42c1) — consultation livrée (rév. 4.5, 4.6), kb_search sur les propositions en attente livré (rév. 4.7), messages de kb_list et kb_read corrigés, état de l'entrée ripgrep
 sources:
 - id: retour-j5
   resource: premier retour d'usage réel d'une session consommatrice, post-J5
@@ -154,6 +159,54 @@ est désormais compté **séparément par déclencheur**. « Deux `kb_list` en m
 de cinq secondes ne provoquent qu'un seul parcours » reste vrai ; un `kb_list`
 ne prive plus l'appel suivant du re-scan sur `UNKNOWN_BASE`.
 
+## Livré — rév. 4.5 et 4.6
+
+### Consultation par un humain : une interface web en lecture seule
+
+**Retour à l'origine.** Le 26/10/2026, sur un hub de 8 bases servi par une passerelle MCP locale, une session à qui l'on demandait si une procédure existait a enchaîné 6 appels `kb_search` (mots-clés puis regex, sur `base: "*"` puis sur une seule base) et 1 `kb_read` avant de conclure qu'il n'y en avait pas : la sortie étant plafonnée, une absence ne se prouve que par reformulations successives (voir `limitations-connues.md`, « `kb_search` : un plafond de sortie, même sur plusieurs bases »). Aucun outil ne liste les documents d'une base filtrés par leur `type` de frontmatter, alors que la base visée a un type `Procédure` dans son vocabulaire fermé. `kb_list` avec `include_pending_concerns` tronquait sa sortie, avec 70 à 74 propositions en attente dans deux bases. Côté humain, aucun autre accès que la session MCP ou la lecture des fichiers dans les dépôts git : ni l'`index.md` d'une base à parcourir, ni lien entre bases `<base>:/<chemin>` à suivre, ni propositions en attente à consulter.[^prop-1ee6]
+
+**Demande.** Une interface web de consultation des bases du hub, en lecture seule : la liste des bases (objet, nombre de documents, propositions en attente), comme `kb_list` ; la navigation dans chaque base depuis son `index.md`, documents rendus avec leur frontmatter ; les liens `<base>:/<chemin>` résolus en liens cliquables ; des filtres par `type` et par `tags` ; la recherche plein texte, comme `kb_search` ; les propositions en attente, intégrées et rejetées de chaque base, avec leur motif, comme `kb_proposal_status` ; le `log.md` de chaque base.
+
+**Points à arbitrer, soulevés par le retour.** Chaque client MCP a sa propre instance du hub (`limitations-connues.md`, « Visibilité des bases entre sessions ») : une interface partagée suppose un processus de lecture commun. Le refus du re-scan « partagé au niveau du hub » (ci-dessous, « Refusé ») portait sur un état en mémoire qui ferait autorité, pas sur une lecture du disque. Reste l'accès — réseau, authentification —, puisque des bases privées n'ont pas vocation à être publiques.
+
+**Décision.** Livré : rév. 4.5 (commit `e9c87c3` du hub, 29/10/2026), puis rév. 4.6 (`f8ade72`, 30/10/2026). Décisions du propriétaire de la spécification du 28/10/2026 : profil de base en YAML ; le hub expose ses vues lui-même, en lecture seule ; les autres interfaces accèdent aux données par MCP, et à la lecture par un lien.[^rattrapage-1102]
+
+- **`okf-hub web`** : un processus à part des instances MCP, qui lit le disque par le même registre et le même mécanisme de re-scan (aucun état partagé, § 4.4) ; toutes ses routes sont en `GET`, il n'écrit rien. Il répond à la demande point par point : liste des bases (documents, propositions en attente et date de la plus ancienne), navigation par base et par répertoire, documents rendus avec leur frontmatter et leurs sources, liens `<base>:/<chemin>` résolus en liens cliquables, filtres par `type` et `tags`, recherche plein texte, propositions en attente, intégrées et rejetées avec leur motif, journal.
+- **Accès** : mode local par défaut (adresse de bouclage, sans authentification) ; mode équipe derrière un proxy inverse qui transmet l'identité, crue seulement depuis `trusted-proxies`, avec une visibilité par base (§ 5 bis).
+- **`kb_find`** (rév. 4.5) : les documents d'une ou plusieurs bases par critères structurés — `type`, `tags`, champs, présence ou absence d'une section, sous-chemin, documents qui en citent un autre, entre bases comprises, ancienneté — ou leurs effectifs (`count_by`). Le total est toujours exact : **zéro est une réponse**, et une absence se prouve en un appel au lieu de reformulations successives de `kb_search`.
+- **Rév. 4.6** : l'Explorer de l'interface réunit texte et critères ; `kb_find` prend `query`, `links_to_depth`, `upstream_changed` et `sort` ; pages de gouvernance, de manques, chronologie, état du hub.
+
+Ces points sont tranchés : un processus de lecture commun lit le disque sans état qui fasse autorité, ce que le refus du re-scan « partagé au niveau du hub » (ci-dessous, « Refusé ») ne visait pas ; l'accès est réglé par les deux modes ci-dessus.
+
+**Divergence relevée.** Le message de troncature de `kb_list` conseille d'utiliser « kb_list par base », mais l'outil n'a qu'un paramètre, `include_pending_concerns` (§ 5.1) : la voie qu'il indique n'existe pas. `kb_proposal_status` accepte une base, mais exige `id` ou `submitted_by`. Vérifié sur le code du hub au 27/10/2026 (0.2.8, `src/okf_hub/tools/list_tool.py`).
+
+**Divergence corrigée le 02/11/2026** (commit `de8b84a`) : le message de troncature donne le nombre de listes omises et deux voies qui existent — `kb_search` sur le sujet avec `include_pending: true`, `kb_proposal_status` avec `submitted_by`. `kb_list` ne reçoit pas de paramètre de base : un sujet se vérifie en le cherchant (spec rév. 4.7, non retenu).[^rattrapage-1102]
+
+## Livré — rév. 4.7
+
+### `kb_search` ne voit pas les propositions en attente
+
+**Retour à l'origine.** Le 27/10/2026 vers 08:10 (heure de Paris), sur un hub de 8 bases : `kb_list` avec `include_pending_concerns` comptait 261 propositions en attente, dont 97, 72 et 55 pour trois bases métier ; les plus anciennes listées avaient 8 jours. `kb_search` avec `base: "*"` sur un numéro de ticket d'éditeur ne rendait aucun résultat, alors qu'une proposition en attente depuis la veille portait ce numéro dans son `concerns`. Sur une base dont une vue est générée à l'intégration, la dernière intégration datait de 5 jours : la vue s'arrêtait à cette date.[^prop-678b]
+
+**Effet en usage.** Plusieurs sessions automatiques déposent chaque jour. Tant que la revue n'a pas lieu, ce qu'une session a appris est invisible à la suivante par `kb_search` : elle refait l'enquête, ou dépose un doublon. Le comportement était conforme au modèle de l'époque (§ 5.2).
+
+**Décision.** Livré : rév. 4.7 (commit `97002e2` du hub, 02/11/2026). La rév. 4.6 avait écarté la recherche des propositions depuis MCP ; décision du propriétaire de la spécification du 02/11/2026 : « partir sur les solutions les plus propres ». Sort des trois pistes :[^rattrapage-1102]
+
+- **Option de `kb_search` : livrée.** `include_pending`, faux par défaut : sans elle, la sortie ne change pas et rien n'est lu dans `proposals/`. Avec elle, la même recherche (mode, ET strict puis repli en OU, classement) lit `proposals/pending/` des bases visées. **Le corpus passe d'abord** : les propositions ne prennent que ce qu'il laisse de `max_results`, et viennent après tous ses résultats, sous le même plafond de sortie. Chaque résultat est marqué « non intégré », avec l'`id`, le `type`, le `concerns` et le `submitted-at` ; les extraits ne portent que sur le corps de la proposition, sans `§` puisque `kb_read` ne la lit pas. C'est une seconde exception, en lecture seule, à la liste d'exclusions du § 5.2, confinée comme `kb_proposal_status`.
+- **Date de la plus ancienne dans `kb_list` : livrée.** À côté du nombre de propositions en attente de chaque base, d'après `submitted-at`.
+- **Cadence de revue imposée : non retenue.** La revue reste à l'initiative de l'humain (§ 7) ; la date de la plus ancienne dans `kb_list` rend le retard visible.
+
+**Non retenu en même temps**, avec son motif (spec § 12, rév. 4.7) :
+
+- l'option activée par défaut : la sortie changerait pour qui ne la demande pas, et le non-revu s'inviterait dans chaque réponse ;
+- un classement unique où une proposition passerait devant un document du corpus mieux classé : le revu d'abord, toujours ;
+- une part du plafond réservée aux propositions : elle retirerait des résultats revus à qui active l'option ;
+- le corps entier des propositions : l'`id` et les extraits suffisent à reconnaître un sujet (§ 5.7) ;
+- chercher aussi `accepted/` et `rejected/` : une proposition intégrée se lit dans le corpus, une rejetée a été écartée par la revue ;
+- un paramètre `base` pour `kb_list` : un sujet se vérifie en le cherchant.
+
+L'Explorer de l'interface web cherche les propositions en attente par le même moteur, et donne l'appel MCP correspondant. Ce qui reste limité : `limitations-connues.md`, « Les propositions en attente : cherchées sur demande, après le corpus ».
+
 ## Livré — hors révision
 
 ### `kb_search` — message d'erreur ripgrep absent, et installation en devcontainer
@@ -255,6 +308,41 @@ pour `"*"`), et quand une base épuise le budget, les suivantes n'affichent plus
 que leur en-tête. Voir `limitations-connues.md`, « `kb_search` : un plafond de
 sortie, même sur plusieurs bases ».
 
+### `GOVERNANCE.md` — l'arborescence affichée n'est pas un chemin `kb_read`
+
+**Retour à l'origine.** Dans au moins deux bases (`produit-x`,
+`referentiel-x`), la section « Organisation du corpus » de `GOVERNANCE.md`
+affiche l'arborescence du dépôt avec son préfixe de corpus compris
+(`produit-kb/`, `referentiel-x-kb/`), alors que `kb_read` attend un chemin
+relatif au corpus, sans ce préfixe. Un lecteur qui suit `GOVERNANCE.md`
+construit donc systématiquement un chemin faux.[^prop-e36e]
+
+**État au 23/09.** Le constat vaut pour trois bases : `installation-x` affiche
+de même `installation-kb/`. Depuis le 10/09 (commit `4102cf4` du hub), un chemin
+préfixé ne reçoit plus un `NOT_FOUND` muet : le message dit qu'un fichier
+existe à ce chemin relatif à la racine du dépôt, et donne `corpus-dir`. Il le
+range pourtant parmi les fichiers « source ou de travail, hors du corpus
+consultable », alors que c'est le document du corpus lui-même, préfixe en
+double — reproduit sur `produit-kb/index.md` et `referentiel-x-kb/index.md`.
+Le message aide à trouver le bon chemin ; il en dit une raison
+fausse.[^rattrapage-0923]
+
+**Périmètre à confirmer.** Ce constat porte sur le contenu propre de trois
+bases tierces (probablement hérité d'un gabarit commun), pas sur un outil ou
+un script du hub — à la limite de ce que couvre cette base. Consigné ici parce
+que la friction touche directement l'usage de `kb_read`, mais une redite dans
+ces bases elles-mêmes serait la voie normale s'il s'agit d'un défaut propre à
+leur documentation plutôt que d'un gabarit partagé. Le libellé du `NOT_FOUND`,
+lui, est bien d'ici.
+
+**Corrigé le 02/11/2026** (commit `de8b84a` du hub, hors révision de la spécification) : la part qui est d'ici est faite. Un chemin qui répète `corpus-dir` en tête ne reçoit plus un message qui range le document parmi les fichiers « source ou de travail, hors du corpus consultable ». Il dit que les chemins sont relatifs à `corpus-dir`, que celui-ci est répété en tête, et donne le chemin à passer, vérifié par la même résolution confinée qu'une lecture :[^rattrapage-1102]
+
+```
+ERROR: NOT_FOUND: document 'knowledge/procedures/sso.md' introuvable dans la base 'produit-x' : les chemins sont relatifs à corpus-dir ('knowledge'), et celui-ci le répète en tête. Le document existe : path='procedures/sso.md'.
+```
+
+L'arborescence affichée par la gouvernance des bases concernées reste leur contenu propre, comme l'entrée le disait déjà : une redite dans ces bases reste la voie normale.
+
 ## À arbitrer
 
 ### `kb_propose` — aucun canal pour un artefact source (export XML/zip)
@@ -335,58 +423,7 @@ mode d'emploi recommande avant toute proposition.
 Pas de décision prise ici : golden rule 5, le constat est intégré, la mise en
 œuvre ne l'est pas.
 
-### `GOVERNANCE.md` — l'arborescence affichée n'est pas un chemin `kb_read`
-
-**Retour à l'origine.** Dans au moins deux bases (`produit-x`,
-`referentiel-x`), la section « Organisation du corpus » de `GOVERNANCE.md`
-affiche l'arborescence du dépôt avec son préfixe de corpus compris
-(`produit-kb/`, `referentiel-x-kb/`), alors que `kb_read` attend un chemin
-relatif au corpus, sans ce préfixe. Un lecteur qui suit `GOVERNANCE.md`
-construit donc systématiquement un chemin faux.[^prop-e36e]
-
-**État au 23/09.** Le constat vaut pour trois bases : `installation-x` affiche
-de même `installation-kb/`. Depuis le 10/09 (commit `4102cf4` du hub), un chemin
-préfixé ne reçoit plus un `NOT_FOUND` muet : le message dit qu'un fichier
-existe à ce chemin relatif à la racine du dépôt, et donne `corpus-dir`. Il le
-range pourtant parmi les fichiers « source ou de travail, hors du corpus
-consultable », alors que c'est le document du corpus lui-même, préfixe en
-double — reproduit sur `produit-kb/index.md` et `referentiel-x-kb/index.md`.
-Le message aide à trouver le bon chemin ; il en dit une raison
-fausse.[^rattrapage-0923]
-
-**Périmètre à confirmer.** Ce constat porte sur le contenu propre de trois
-bases tierces (probablement hérité d'un gabarit commun), pas sur un outil ou
-un script du hub — à la limite de ce que couvre cette base. Consigné ici parce
-que la friction touche directement l'usage de `kb_read`, mais une redite dans
-ces bases elles-mêmes serait la voie normale s'il s'agit d'un défaut propre à
-leur documentation plutôt que d'un gabarit partagé. Le libellé du `NOT_FOUND`,
-lui, est bien d'ici.
-
-### Consultation par un humain : une interface web en lecture seule
-
-**Retour à l'origine.** Le 26/10/2026, sur un hub de 8 bases servi par une passerelle MCP locale, une session à qui l'on demandait si une procédure existait a enchaîné 6 appels `kb_search` (mots-clés puis regex, sur `base: "*"` puis sur une seule base) et 1 `kb_read` avant de conclure qu'il n'y en avait pas : la sortie étant plafonnée, une absence ne se prouve que par reformulations successives (voir `limitations-connues.md`, « `kb_search` : un plafond de sortie, même sur plusieurs bases »). Aucun outil ne liste les documents d'une base filtrés par leur `type` de frontmatter, alors que la base visée a un type `Procédure` dans son vocabulaire fermé. `kb_list` avec `include_pending_concerns` tronquait sa sortie, avec 70 à 74 propositions en attente dans deux bases. Côté humain, aucun autre accès que la session MCP ou la lecture des fichiers dans les dépôts git : ni l'`index.md` d'une base à parcourir, ni lien entre bases `<base>:/<chemin>` à suivre, ni propositions en attente à consulter.[^prop-1ee6]
-
-**Divergence relevée.** Le message de troncature de `kb_list` conseille d'utiliser « kb_list par base », mais l'outil n'a qu'un paramètre, `include_pending_concerns` (§ 5.1) : la voie qu'il indique n'existe pas. `kb_proposal_status` accepte une base, mais exige `id` ou `submitted_by`. Vérifié sur le code du hub au 27/10/2026 (0.2.8, `src/okf_hub/tools/list_tool.py`).
-
-**Demande.** Une interface web de consultation des bases du hub, en lecture seule : la liste des bases (objet, nombre de documents, propositions en attente), comme `kb_list` ; la navigation dans chaque base depuis son `index.md`, documents rendus avec leur frontmatter ; les liens `<base>:/<chemin>` résolus en liens cliquables ; des filtres par `type` et par `tags` ; la recherche plein texte, comme `kb_search` ; les propositions en attente, intégrées et rejetées de chaque base, avec leur motif, comme `kb_proposal_status` ; le `log.md` de chaque base.
-
-**Points à arbitrer, soulevés par le retour.** Chaque client MCP a sa propre instance du hub (`limitations-connues.md`, « Visibilité des bases entre sessions ») : une interface partagée suppose un processus de lecture commun. Le refus du re-scan « partagé au niveau du hub » (ci-dessous, « Refusé ») portait sur un état en mémoire qui ferait autorité, pas sur une lecture du disque. Reste l'accès — réseau, authentification —, puisque des bases privées n'ont pas vocation à être publiques.
-
-Pas de décision prise ici : golden rule 5, le constat est intégré, la demande reste à arbitrer.
-
-### `kb_search` ne voit pas les propositions en attente
-
-**Retour à l'origine.** Le 27/10/2026 vers 08:10 (heure de Paris), sur un hub de 8 bases : `kb_list` avec `include_pending_concerns` comptait 261 propositions en attente, dont 97, 72 et 55 pour trois bases métier ; les plus anciennes listées avaient 8 jours. `kb_search` avec `base: "*"` sur un numéro de ticket d'éditeur ne rendait aucun résultat, alors qu'une proposition en attente depuis la veille portait ce numéro dans son `concerns`. Sur une base dont une vue est générée à l'intégration, la dernière intégration datait de 5 jours : la vue s'arrêtait à cette date.[^prop-678b]
-
-**Effet en usage.** Plusieurs sessions automatiques déposent chaque jour. Tant que la revue n'a pas lieu, ce qu'une session a appris est invisible à la suivante par `kb_search` : elle refait l'enquête, ou dépose un doublon. Le comportement est conforme au modèle : voir `limitations-connues.md`, « Les propositions en attente ne sont pas cherchées ».
-
-**Pistes proposées, non arbitrées.**
-
-- une option de `kb_search` qui cherche aussi dans `proposals/pending/`, résultats marqués « non intégré » — elle toucherait à la liste d'exclusions transverse du § 5.2, dont `kb_proposal_status` est aujourd'hui la seule exception ;
-- une cadence de revue régulière (`kb-review` quotidienne, ou à heure fixe), pour que la file ne dépasse pas quelques jours ;
-- dans `kb_list`, la date de la plus ancienne proposition en attente de chaque base, pour voir le retard d'un coup d'œil.
-
-Pas de décision prise ici : golden rule 5, le constat est intégré, la mise en œuvre ne l'est pas.
+**État au 02/11/2026.** Toujours aucun repli : `kb_search` exige ripgrep. La seconde piste est couverte en substance depuis la rév. 4.5 : `kb_find` liste les documents d'une base par sous-chemin (`under`), `type` ou `tags`, avec leur chemin et leur titre, sans leur contenu, et sans lancer ripgrep tant qu'on ne lui passe pas `query`.[^rattrapage-1102]
 
 ## Reporté
 
@@ -437,3 +474,6 @@ d'intégration.
 [^prop-1ee6]: prop-2026-10-26-1ee6, résolu en `accepted/` — le constat est intégré ; la demande d'interface reste à arbitrer.
 
 [^prop-678b]: prop-2026-10-27-678b, résolu en `accepted/` — le constat est intégré ; ses trois pistes ne le sont pas (golden rule 5).
+
+
+[^rattrapage-1102]: prop-2026-11-02-42c1, résolu en `accepted/` — rattrapage de la base sur le code du hub au 02/11/2026 (0.3.1, spec rév. 4.7), sans nouveau retour d'usage : consultation (rév. 4.5, `e9c87c3` ; rév. 4.6, `f8ade72`), propositions en attente cherchables et date de la file (rév. 4.7, `97002e2`), messages de `kb_list` et de `kb_read` corrigés (`de8b84a`). Voir `CHANGELOG.md` et `docs/SPEC-okf-bundle-hub-v0.md` § 12 du dépôt okf-hub.
